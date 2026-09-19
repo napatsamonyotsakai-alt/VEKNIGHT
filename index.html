@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Learning & Story Engine v9.5</title>
+  <title>Interactive Learning & Story Engine v10.0</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     :root {
@@ -41,13 +41,14 @@
     button.success:hover { background: #16a34a; }
     button.purple { background: var(--purple); }
     button.purple:hover { background: #7c3aed; }
-    button.copied { background: #475569 !important; opacity: 0.8; }
     button.icon-btn { padding: 8px 12px; font-size: 0.88rem; }
 
-    textarea { width: 100%; height: 90px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; margin-bottom: 10px; resize: vertical; }
+    textarea, input[type="text"] { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; margin-bottom: 10px; }
+    textarea { height: 90px; resize: vertical; }
 
     .section-splitter { border-bottom: 2px dashed var(--border); margin: 10px 0 20px 0; }
 
+    /* CHUNK BUTTONS GRID */
     .chunk-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
     .chunk-btn { background: #ffffff; color: var(--text); border: 2px solid var(--primary); padding: 10px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 4px; transition: all 0.2s; width: calc(50% - 5px); }
     .chunk-btn:hover { background: #eff6ff; }
@@ -55,232 +56,76 @@
     .chunk-btn .badge { font-size: 0.7rem; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; width: fit-content; }
     .chunk-btn.used .badge { background: #64748b; }
 
-    .slide-layout-wrapper {
-      display: flex;
-      flex-direction: column;
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      background: #ffffff;
-      margin-bottom: 15px;
-    }
+    /* SLIDE LAYOUT WRAPPER */
+    .slide-layout-wrapper { display: flex; flex-direction: column; border: 2px solid var(--border); border-radius: 12px; overflow: hidden; background: #ffffff; margin-bottom: 15px; }
 
-    .slide-text-header {
-      background: #f8fafc;
-      border-bottom: 2px solid var(--border);
-      padding: 16px;
-    }
+    .slide-text-header { background: #f8fafc; border-bottom: 2px solid var(--border); padding: 16px; }
 
-    .active-sentences-box {
-      font-size: 1rem;
-      line-height: 1.7;
-      color: #0f172a;
-      background: #eff6ff;
-      border-left: 4px solid var(--primary);
-      padding: 12px 16px;
-      border-radius: 6px;
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px;
-    }
+    .active-sentences-box { font-size: 1rem; line-height: 1.7; color: #0f172a; background: #eff6ff; border-left: 4px solid var(--primary); padding: 12px 16px; border-radius: 6px; margin-bottom: 10px; position: relative; }
 
-    .summary-banner {
-      background: #fefce8;
-      border: 1px solid #fef08a;
-      border-left: 4px solid #eab308;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      color: #713f12;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
+    .summary-banner { background: #fefce8; border: 1px solid #fef08a; border-left: 4px solid #eab308; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; color: #713f12; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .summary-text { font-weight: bold; flex: 1; }
 
-    .metaphor-box {
-      margin-top: 10px;
-      background: #f3e8ff;
-      border: 1px solid #d8b4fe;
-      border-left: 4px solid var(--purple);
-      padding: 10px 14px;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      color: #581c87;
-    }
+    .metaphor-box { margin-top: 10px; background: #f3e8ff; border: 1px solid #d8b4fe; border-left: 4px solid var(--purple); padding: 10px 14px; border-radius: 6px; font-size: 0.9rem; color: #581c87; }
     .metaphor-title { font-weight: bold; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
 
-    .stage-canvas { 
-      position: relative; 
-      width: 100%; 
-      height: 500px; 
-      background: #ffffff; 
-      overflow: hidden; 
-      border-bottom: 2px solid var(--border);
-    }
+    /* STAGE CANVAS */
+    .stage-canvas { position: relative; width: 100%; height: 520px; background: #ffffff; overflow: hidden; border-bottom: 2px solid var(--border); }
 
     .svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
     .entity-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
     
-    .entity {
-      position: absolute;
-      transform: translate(-50%, -50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      z-index: 5;
-      cursor: grab;
-      user-select: none;
-      touch-action: none;
-    }
+    /* DRAGGABLE ENTITY ITEMS */
+    .entity { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; z-index: 5; cursor: grab; user-select: none; touch-action: none; transition: transform 0.1s ease-out; }
     .entity:active { cursor: grabbing; z-index: 50; }
     
-    .emoji-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2px 6px;
-      border-radius: 8px;
-      pointer-events: auto;
-    }
-    .emoji-wrapper.has-bg {
-      background: rgba(255, 255, 255, 0.95);
-      border: 1.5px solid var(--primary);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    }
+    .emoji-wrapper { position: relative; display: flex; align-items: center; justify-content: center; padding: 3px 6px; border-radius: 10px; pointer-events: none; }
+    .emoji-wrapper.has-bg { background: rgba(255, 255, 255, 0.95); border: 1.5px solid var(--primary); box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
     
-    /* อีโมจิขนาดย่อลงเพื่อรองรับปริมาณมากๆ */
-    .emoji-main { font-size: 1.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12)); }
-    .emoji-sub { font-size: 0.9rem; margin-left: -3px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15)); }
-    .emoji-overlay { position: absolute; font-size: 0.85rem; top: -4px; right: -4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
-    .entity-img { width: 36px; height: 36px; object-fit: contain; border-radius: 6px; }
+    /* ADJUSTED EMOJI SIZES */
+    .emoji-main { font-size: 1.6rem; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.12)); }
+    .emoji-sub { font-size: 0.95rem; margin-left: -3px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)); }
+    .emoji-overlay { position: absolute; font-size: 0.85rem; top: -5px; right: -5px; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3)); }
+    .entity-img { width: 38px; height: 38px; object-fit: contain; border-radius: 6px; }
 
-    /* ปรับขนาดข้อความให้เท่ากับ 11px พอดีกับข้อความบนเส้น */
-    .entity .label {
-      padding: 2px 6px;
-      border-radius: 5px;
-      font-size: 11px;
-      font-weight: bold;
-      border: 1px solid var(--border);
-      margin-top: 3px;
-      white-space: normal;
-      word-break: break-word;
-      background: #ffffff;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
-      max-width: 120px;
-      text-align: center;
-      cursor: pointer;
-      pointer-events: auto;
-      transition: all 0.2s;
-    }
-    .entity .label.expanded {
-      max-width: 260px;
-      z-index: 100;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      border-color: var(--primary);
-    }
+    /* EXACT 11px MATCHING TEXT */
+    .entity .label { padding: 3px 6px; border-radius: 5px; font-size: 11px !important; font-weight: bold; border: 1px solid var(--border); margin-top: 3px; white-space: normal; word-break: break-word; background: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.06); max-width: 130px; text-align: center; cursor: pointer; pointer-events: auto; transition: all 0.2s; line-height: 1.2; }
+    .entity .label.expanded { max-width: 260px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-color: var(--primary); }
     
     .entity.style-highlight .label { background: #ffffff; color: #1e40af; border-color: #93c5fd; }
     .entity.style-warning .label { background: #ffffff; color: #92400e; border-color: #fcd34d; }
     .entity.style-danger .label { background: #ffffff; color: #991b1b; border-color: #fca5a5; }
 
-    .line-text-group text {
-      font-size: 11px;
-      font-weight: bold;
-      fill: #1e293b;
-      text-anchor: middle;
-      dominant-baseline: central;
-    }
-    .line-text-bg {
-      fill: #ffffff;
-      rx: 4px;
-      ry: 4px;
-    }
+    /* LINE TEXT (EXACT 11px) */
+    .line-text-group text { font-size: 11px !important; font-weight: bold; fill: #1e293b; text-anchor: middle; dominant-baseline: central; }
+    .line-text-bg { fill: #ffffff; rx: 4px; ry: 4px; }
 
     @keyframes dashAnimation { to { stroke-dashoffset: -20; } }
     .animated-line { stroke-dasharray: 6, 6; animation: dashAnimation 1s linear infinite; }
 
-    /* ปุ่มเลื่อนสไลด์ ชิดซ้าย-ขวา */
-    .slide-controls-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #f1f5f9;
-      padding: 10px 16px;
-      gap: 8px;
-    }
+    /* CONTROLS BAR WITH LEFT/RIGHT BOUND BUTTONS */
+    .slide-controls-bar { display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; padding: 10px 14px; gap: 10px; width: 100%; }
 
     .audio-panel { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
     .audio-panel .bar-group { display: flex; flex-direction: column; gap: 4px; }
     .audio-panel label { font-size: 0.8rem; font-weight: bold; color: var(--secondary); display: flex; justify-content: space-between; }
 
-    /* POPUP MODAL STYLES */
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(15, 23, 42, 0.65);
-      backdrop-filter: blur(4px);
-      z-index: 1000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .modal-card {
-      background: white;
-      border-radius: 12px;
-      max-width: 800px;
-      width: 100%;
-      max-height: 85vh;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
-    }
-    .modal-header {
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #f8fafc;
-      border-radius: 12px 12px 0 0;
-    }
-    .modal-body {
-      padding: 20px;
-      overflow-y: auto;
-      line-height: 1.8;
-      font-size: 0.95rem;
-    }
-    .modal-footer {
-      padding: 12px 20px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: flex-end;
-      background: #f8fafc;
-      border-radius: 0 0 12px 12px;
-    }
-    .highlight-chunk {
-      padding: 10px 14px;
-      border-radius: 8px;
-      margin-bottom: 12px;
-      border-left: 4px solid var(--primary);
-    }
+    /* QUIZ GENERATOR BUTTONS BAR BELOW CONTROL */
+    .quiz-prompt-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding: 12px; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; }
 
-    /* ACTION BUTTON PANEL BELOW CONTROLS */
-    .action-panel {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      background: #ffffff;
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-bottom: 15px;
-    }
+    /* POP-UP MODAL STYLES */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.65); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(3px); }
+    .modal-card { background: white; border-radius: 12px; max-width: 800px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
+    .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1rem; color: var(--primary); }
+    .modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .chunk-highlight-box { padding: 12px 16px; border-radius: 8px; font-size: 0.95rem; line-height: 1.6; border-left: 5px solid; }
+    
+    /* ALTERNATING HIGHLIGHT COLORS FOR CHUNKS */
+    .chunk-color-0 { background: #eff6ff; border-color: #2563eb; color: #1e3a8a; }
+    .chunk-color-1 { background: #f0fdf4; border-color: #16a34a; color: #14532d; }
+    .chunk-color-2 { background: #fefce8; border-color: #eab308; color: #713f12; }
+    .chunk-color-3 { background: #faf5ff; border-color: #a855f7; color: #581c87; }
+    .chunk-color-4 { background: #fff1f2; border-color: #f43f5e; color: #881337; }
   </style>
 </head>
 <body>
@@ -296,8 +141,8 @@
     <label style="font-size:0.85rem; font-weight:bold; margin-bottom:4px; display:block;">วางรหัสผลลัพธ์การแยกชุดเนื้อหา (JSON Chunk Array):</label>
     <textarea id="chunkJsonInput" placeholder="วางผลลัพธ์จาก AI ที่แยกข้อความเป็ชุดๆ ที่นี่..."></textarea>
     <div class="btn-group">
+      <button onclick="pasteChunkJSON()">📋 วางรหัส JSON จาก AI</button>
       <button class="purple" onclick="parseChunks()">🧩 ประมวลผลสร้างปุ่มแยกชุดเนื้อหา</button>
-      <button class="success" onclick="pasteChunkJSON()">📋 วางรหัสแยกเนื้อหา</button>
       <button class="danger" onclick="document.getElementById('chunkJsonInput').value=''; document.getElementById('chunkGrid').innerHTML='';">🗑️ ล้าง</button>
     </div>
 
@@ -309,10 +154,16 @@
   <!-- LAYER 2: LESSON GENERATOR SYSTEM PROMPT & JSON RECEIVER -->
   <div class="card">
     <div class="header-box">
-      <h2>📌 2. พรอมต์สร้างสื่อการสอน interactive (Single Canvas Edition v9.5) <span class="version-tag">Step 2</span></h2>
+      <h2>📌 2. พรอมต์สร้างสื่อการสอน interactive (Single Canvas Edition v10.0) <span class="version-tag">Step 2</span></h2>
       <button onclick="copyPrompt()">📋 Copy System Prompt</button>
     </div>
     <div class="prompt-box" id="systemPrompt"></div>
+
+    <!-- SUGGESTION FOR CUSTOM INTEREST IN PROMPT -->
+    <div style="margin-top:10px;">
+      <label style="font-size:0.85rem; font-weight:bold; color:var(--purple);">💡 หัวข้อ/ข่าวสารความรู้ที่สนใจเป็นพิเศษ (ใส่เพิ่มเข้าไปใน Prompt สื่อความรู้ได้):</label>
+      <input type="text" id="customInterestInput" placeholder="เช่น เทคโนโลยี AI ล่าสุด, การสำรวจอวกาศ, สุขภาพและการออกกำลังกาย..." />
+    </div>
 
     <div class="header-box" style="margin-top:15px;">
       <h2>📥 ช่องรับรหัส JSON สื่อการสอนจาก AI</h2>
@@ -323,7 +174,7 @@
     <div class="btn-group">
       <button onclick="pasteJSON()">📋 วางรหัส (Paste)</button>
       <button class="danger" onclick="clearJSON()">🗑️ ล้างช่อง (Clear)</button>
-      <button class="secondary" onclick="loadSample()">🧪 โหลดตัวอย่างสื่อเรือไฟ v9.5</button>
+      <button class="secondary" onclick="loadSample()">🧪 โหลดตัวอย่างสื่อเรือไฟ v10.0</button>
       <button class="success" onclick="renderLesson()">▶️ สร้างและเล่นสื่อการสอน</button>
     </div>
   </div>
@@ -339,20 +190,19 @@
       
       <!-- TOP TEXT DISPLAY & METAPHOR DRAMA STORY -->
       <div class="slide-text-header">
-        <div class="active-sentences-box">
-          <div id="activeStepText" style="flex:1;">
-            กดปุ่ม "สร้างและเล่นสื่อการสอน" หรือโหลดตัวอย่างเพื่อเริ่มเรียนรู้
-          </div>
-          <button class="purple icon-btn" style="white-space:nowrap;" onclick="openAllContentModal()">📖 ดูเนื้อหาทั้งหมด</button>
+        <div class="active-sentences-box" id="activeStepText">
+          กดปุ่ม "สร้างและเล่นสื่อการสอน" หรือโหลดตัวอย่างเพื่อเริ่มเรียนรู้
         </div>
 
-        <!-- METAPHOR DRAMA STORY BOX -->
+        <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+          <button class="purple icon-btn" onclick="openAllContentModal()">👁️ ดูเนื้อหาทั้งหมด (Pop-up)</button>
+        </div>
+
         <div class="metaphor-box" id="metaphorBox" style="display:none;">
           <div class="metaphor-title">🎭 เรื่องเล่าเปรียบเปรย (Dramatic Metaphor Story):</div>
           <div id="metaphorText"></div>
         </div>
 
-        <!-- SUMMARY BANNER WITH INDEPENDENT AUDIO SPEAKER -->
         <div class="summary-banner" id="summaryContainer" style="margin-top:10px;">
           <span class="summary-text" id="stepSummary">📝 สรุปประจำสไลด์: -</span>
           <button class="secondary icon-btn" style="padding:4px 8px; font-size:0.75rem;" onclick="speakSummaryOnly()">🔊 ฟังเฉพาะสรุป</button>
@@ -363,11 +213,10 @@
       <div class="stage-canvas" id="stageCanvas">
         <svg class="svg-layer" id="svgLayer">
           <defs>
-            <!-- ปรับแก้หัวลูกศร refX=28 เพื่อไม่ให้โดนตัว entity ทับ -->
-            <marker id="arrow" viewBox="0 0 10 10" refX="28" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
               <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/>
             </marker>
-            <marker id="arrow-animated" viewBox="0 0 10 10" refX="28" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <marker id="arrow-animated" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
               <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/>
             </marker>
           </defs>
@@ -375,39 +224,35 @@
         <div class="entity-layer" id="entityLayer"></div>
       </div>
 
-      <!-- CONTROLS BAR: ปุ่มย้อนกลับชิดซ้าย ปุ่มถัดไปชิดขวา -->
+      <!-- CONTROLS BAR WITH LEFT/RIGHT BOUND BUTTONS -->
       <div class="slide-controls-bar">
-        <button class="secondary icon-btn" onclick="prevStep()">⏮️ ไปแผ่นที่แล้ว</button>
+        <button class="secondary icon-btn" onclick="prevStep()">⏮️ ย้อนกลับ</button>
         
         <div class="btn-group" style="margin:0;">
           <button class="icon-btn" onclick="speakCurrentStep()">▶️ อ่านเนื้อหาหลัก</button>
           <button class="danger icon-btn" onclick="stopSpeech()">🛑 หยุดเสียง</button>
-          <span class="step-info" id="stepCounter" style="font-weight:bold; align-self:center; margin: 0 10px;">สเต็ป: 0 / 0</span>
         </div>
 
-        <button class="icon-btn" onclick="nextStep()">ไปแผ่นต่อไป ⏭️</button>
+        <div id="stepCounter" style="font-weight:bold; font-size:0.85rem; color:var(--primary);">สเต็ป: 0 / 0</div>
+
+        <button class="icon-btn" onclick="nextStep()">ถัดไป ⏭️</button>
       </div>
 
     </div>
 
-    <!-- ACTION BUTTON PANEL BELOW CONTROLS -->
-    <div class="action-panel">
-      <button class="purple" onclick="generateQuizPrompt('sub')">🎭 เจนโจทย์ย่อย (ละครจีน 5 ข้อ)</button>
-      <button class="purple" onclick="generateQuizPrompt('all')">🎭 เจนโจทย์รวมทั้งหมด (ละครจีน 10 ข้อ)</button>
-      <button class="secondary" onclick="copyText('sub')">📋 ก๊อปเนื้อหาย่อย</button>
-      <button class="secondary" onclick="copyText('all')">📋 ก๊อปเนื้อหารวมทั้งหมด</button>
-    </div>
-
-    <!-- RANDOM KNOWLEDGE / TOPIC INPUT FOR FINAL SLIDE -->
-    <div style="background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:15px;">
-      <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:6px;">
-        🌐 ระบุหัวข้อข่าวสาร/ความรู้รอบตัวที่อยากสุ่มเพิ่มในหน้าสุดท้าย (สุ่มอัตโนมัติหากปล่อยว่าง):
-      </label>
-      <input type="text" id="customTopicInput" placeholder="เช่น AI ในปี 2026, การสำรวจอวกาศล่าสุด, เทคโนโลยีพลังงานสะอาด..." style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px; font-size:0.9rem;">
+    <!-- QUIZ GENERATOR PROMPT BUTTONS (BELOW CONTROL BAR) -->
+    <div class="quiz-prompt-bar">
+      <div style="width:100%; font-size:0.85rem; font-weight:bold; color:#6b21a8; margin-bottom:4px;">
+        🎬 พรอมต์สร้างแบบทดสอบละครจีนแนวตั้ง (Tutor Engine):
+      </div>
+      <button class="purple" onclick="copyQuizPrompt('sub')">🎯 คัดลอกพรอมต์โจทย์ย่อย (5 ข้อ - ละครจีน)</button>
+      <button class="purple" onclick="copyQuizPrompt('full')">📚 คัดลอกพรอมต์โจทย์รวมทั้งหมด (10 ข้อ - ละครจีน)</button>
+      <button class="secondary" onclick="copyContentText('sub')">📄 ก๊อปเนื้อหาย่อยหน้าปัจจุบัน</button>
+      <button class="secondary" onclick="copyContentText('full')">📖 ก๊อปเนื้อหาทั้งหมดทุกหน้า</button>
     </div>
 
     <!-- AUDIO CONTROLS -->
-    <div class="audio-panel">
+    <div class="audio-panel" style="margin-top:15px;">
       <div class="bar-group">
         <label><span>ความเร็วเสียง (Rate)</span><span id="rateVal">1.0x</span></label>
         <input type="range" id="rateBar" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateAudioSettings()">
@@ -423,19 +268,14 @@
     </div>
   </div>
 
-  <!-- MODAL FOR ALL CONTENT DISPLAY -->
-  <div class="modal-overlay" id="contentModal">
+  <!-- POP-UP MODAL FOR VIEWING ALL CONTENT -->
+  <div class="modal-overlay" id="contentModal" style="display:none;">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 style="color:var(--primary);">📖 เนื้อหาบทเรียนทั้งหมด</h3>
-        <button class="danger icon-btn" onclick="closeAllContentModal()">✖️ ปิด</button>
+        <span>📖 เนื้อหาทั้งหมดในบทเรียน (ไฮไลท์สลับชุด)</span>
+        <button class="danger icon-btn" onclick="closeAllContentModal()">✖ ปิด</button>
       </div>
-      <div class="modal-body" id="modalContentBody">
-        <!-- Text rendered dynamically -->
-      </div>
-      <div class="modal-footer">
-        <button class="secondary" onclick="closeAllContentModal()">ปิดหน้าต่าง</button>
-      </div>
+      <div class="modal-body" id="modalBodyContent"></div>
     </div>
   </div>
 
@@ -444,7 +284,7 @@
     let currentStepIndex = 0;
     const synth = window.speechSynthesis;
 
-    // UPDATE PROMPT TEXT 1: CHUNK SPLITTER
+    // UPDATE PROMPT TEXT 1: CHUNK SPLITTER (STRICT CODE BLOCK FORMAT)
     function updateChunkPromptText() {
       const str = `ถอดข้อความจากรูปภาพ/เอกสารยาวนี้อย่างละเอียด 100% 
 
@@ -453,8 +293,9 @@
 2. หากเป็นแบบฝึกหัด/ข้อสอบ ให้เติมคำตอบที่ถูกต้องลงในช่องว่าง หรือเฉลยท้ายคำถามทันที
 3. หากพบตัวอักษรเพี้ยน สัญลักษณ์แปลกๆ ให้แก้ไขให้อ่านเป็นภาษาไทยปกติเรียบร้อย
 4. แบ่งเนื้อหาทั้งหมดออกเป็นชุดๆ (Chunks) ให้มีปริมาณมากที่สุดเท่าที่จะเป็นไปได้ต่อกลุ่ม โดยไม่ตกหล่น
+5. [ข้อบังคับการส่งกลับ]: ให้ส่งกลับเป็นรหัส JSON ใน Markdown Code Block (\`\`\`json ... \`\`\`) เท่านั้น เพื่อให้กดปุ่ม Copy ได้ทีเดียวจบโดยไม่รวน
 
-[รูปแบบส่งกลับ JSON ARRAY ONLY ใน Markdown Block]
+[รูปแบบส่งกลับ JSON ARRAY ONLY IN CODE BLOCK]
 \`\`\`json
 [
   { "id": 1, "title": "หัวข้อชุดที่ 1", "content": "ข้อความต้นฉบับชุดที่ 1..." },
@@ -464,21 +305,18 @@
       document.getElementById('chunkPromptText').innerText = str;
     }
 
-    // UPDATE PROMPT TEXT 2: LESSON GENERATOR SYSTEM PROMPT
+    // UPDATE PROMPT TEXT 2: LESSON GENERATOR (STRICT CODE BLOCK FORMAT)
     function updateSystemPromptText() {
-      const customTopic = document.getElementById('customTopicInput')?.value.trim() || '';
-      const topicPrompt = customTopic ? `สำหรับหน้าความรู้สุ่ม ให้เน้นหัวข้อเกี่ยวกับ "${customTopic}"` : `สำหรับหน้าความรู้สุ่ม ให้สุ่มข่าวสาร/เทคโนโลยี/ความรู้น่าสนใจในปัจจุบัน`;
-
-      const promptStr = `คุณคือผู้เชี่ยวชาญด้าน Visual Mind Map และ Storytelling สื่อการสอน Interactive (Engine v9.5)
+      const promptStr = `คุณคือผู้เชี่ยวชาญด้าน Visual Mind Map และ Storytelling สื่อการสอน Interactive (Engine v10.0)
 
 [กฎเหล็กการสร้างสื่อ STRICT RULES]
 1. ทำสื่อ 1 สไลด์ต่อ 1 เนื้อหาย่อยอย่างทั่วถึง (1 Slide per Content Unit)
-2. ห้ามตัด ห้ามลดข้อความเด็ดขาด ยกเว้นเติมคำตอบ/แก้ตัวเพี้ยน
+2. ห้ามตัด ห้ามลดข้อความเด็ดขาด
 3. เอาตัวเลขรันลำดับหน้าประโยคออก (No Sentence Numbering)
-4. การเชื่อมโยง: ให้เน้นอธิบายด้วยการโยงเส้น (Lines) เป็นอันดับแรก
-5. สไลด์รวมรองสุดท้าย (Summary Slide): รวมเนื้อหาทั้งหมดไว้ใน splitSentences และรวม entities/lines จากทุกสไลด์ย่อยเข้ามาเชื่อมโยงกันเป็น Mind Map ใหญ่
-6. สไลด์สุดท้าย (Random Knowledge Slide): สุ่มความรู้รอบตัว/ข่าวสารที่น่าสนใจ นำเสนอในรูปแบบ Mind Map เช่นกัน (${topicPrompt})
-7. ให้ส่งคืนผลลัพธ์เป็นรหัส JSON อยู่ภายใน Code Block สีดำ (\`\`\`json ... \`\`\`) เพื่อให้ผู้ใช้กดคัดลอกได้ในครั้งเดียว
+4. การเชื่อมโยง: เน้นการโยงเส้น Mind Map (Lines) โดยให้ x, y ของโหนดกระจายตัวสมดุล สวยงาม
+5. หากไม่มี Emoji ตรงๆ ให้ใช้ Compound Emoji เช่น ["⛵", "🔥"] หรือใช้ URL รูปภาพในฟิลด์ "imageUrl"
+6. สร้าง "metaphorStory" เรื่องเล่าเปรียบเปรยเชิงละครดราม่า/เหนือคาดหมาย เพื่อความจดจำง่าย
+7. [ข้อบังคับการส่งกลับ]: ให้ส่งรหัส JSON ครอบด้วย Markdown Code Block (\`\`\`json ... \`\`\`) เท่านั้น เพื่อให้กด Copy ได้ทีเดียวจบ ห้ามมีข้อความอื่นนอก Code Block
 
 [โครงสร้าง JSON STRICT FORMAT]
 \`\`\`json
@@ -489,7 +327,7 @@
       "step": 1,
       "splitSentences": ["ข้อความเนื้อหาต้นฉบับสมบูรณ์..."],
       "summary": "สรุปสไลด์ 1",
-      "metaphorStory": "🎭 เรื่องเล่าเปรียบเปรยเชิงละครดราม่าให้จำง่าย...",
+      "metaphorStory": "🎭 เรื่องเล่าเปรียบเปรยละคร...",
       "entities": [
         {
           "id": "e1",
@@ -501,10 +339,20 @@
           "x": 30,
           "y": 50,
           "scale": 1.0
+        },
+        {
+          "id": "e2",
+          "emojis": ["🚕"],
+          "hasBg": true,
+          "label": "รถแท็กซี่",
+          "style": "highlight",
+          "x": 70,
+          "y": 50,
+          "scale": 1.0
         }
       ],
       "lines": [
-        {"from": "e1", "to": "e2", "label": "คำเชื่อมบนเส้น", "type": "arrow"}
+        {"from": "e1", "to": "e2", "label": "เชื่อมโยง", "type": "arrow"}
       ]
     }
   ]
@@ -513,45 +361,38 @@
     }
 
     function copyChunkPrompt() {
-      copyToClipboard(document.getElementById('chunkPromptText').innerText, 'คัดลอก พรอมต์แยกชุดเนื้อหา เรียบร้อย!');
+      navigator.clipboard.writeText(document.getElementById('chunkPromptText').innerText).then(() => {
+        alert('คัดลอก พรอมต์แยกชุดเนื้อหา เรียบร้อย!');
+      });
     }
 
     function copyPrompt() {
-      updateSystemPromptText();
-      copyToClipboard(document.getElementById('systemPrompt').innerText, 'คัดลอก System Prompt v9.5 เรียบร้อย!');
-    }
-
-    // SAFE COPY FUNCTION TO PREVENT ERRORS
-    function copyToClipboard(text, successMsg) {
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(text).then(() => alert(successMsg)).catch(() => fallbackCopy(text, successMsg));
-      } else {
-        fallbackCopy(text, successMsg);
+      let promptStr = document.getElementById('systemPrompt').innerText;
+      const customInterest = document.getElementById('customInterestInput').value.trim();
+      if (customInterest) {
+        promptStr += `\n\n[ความสนใจพิเศษเพิ่มเติมของผู้เรียนในการสุ่มสื่อความรู้]:\nกรุณาผสมผสานเรื่องราวเกี่ยวกับ "${customInterest}" เข้าไปในตัวอย่างหรือสไลด์สุ่มความรู้ด้วย`;
       }
+      navigator.clipboard.writeText(promptStr).then(() => {
+        alert('คัดลอก System Prompt v10.0 เรียบร้อย!');
+      });
     }
 
-    function fallbackCopy(text, successMsg) {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.style.position = "fixed";
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
+    async function pasteChunkJSON() {
       try {
-        document.execCommand('copy');
-        alert(successMsg);
+        const text = await navigator.clipboard.readText();
+        const cleanText = extractJsonFromCodeBlock(text);
+        document.getElementById('chunkJsonInput').value = cleanText;
       } catch (err) {
-        alert('ไม่สามารถคัดลอกได้ กรุณาคัดลอกด้วยตนเอง');
+        const fallbackText = prompt("กรุณาวางรหัส JSON Chunk ที่นี่:");
+        if (fallbackText) document.getElementById('chunkJsonInput').value = extractJsonFromCodeBlock(fallbackText);
       }
-      document.body.removeChild(textarea);
     }
 
-    // PARSE CHUNKS AND CREATE BUTTONS
     function parseChunks() {
       try {
-        let raw = document.getElementById('chunkJsonInput').value;
-        raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
-        const data = JSON.parse(raw);
+        const rawText = document.getElementById('chunkJsonInput').value;
+        const cleanJsonText = extractJsonFromCodeBlock(rawText);
+        const data = JSON.parse(cleanJsonText);
         const grid = document.getElementById('chunkGrid');
         grid.innerHTML = '';
 
@@ -563,13 +404,18 @@
           btn.innerHTML = `<span class="badge">ชุดที่ ${item.id}</span> <span>${item.title || 'ไม่มีหัวข้อ'}</span>`;
           
           btn.onclick = () => {
-            updateSystemPromptText();
-            const promptStr = document.getElementById('systemPrompt').innerText;
+            let promptStr = document.getElementById('systemPrompt').innerText;
+            const customInterest = document.getElementById('customInterestInput').value.trim();
+            if (customInterest) {
+              promptStr += `\n[ความสนใจพิเศษเพิ่มเติม]: เน้นแทรกเรื่อง "${customInterest}"`;
+            }
             const fullPayload = promptStr + "\n\n[ข้อความเนื้อหาที่ต้องนำไปสร้างสื่อการสอน]:\n" + item.content;
             
-            copyToClipboard(fullPayload, `คัดลอกชุดที่ ${item.id} พร้อม System Prompt เรียบร้อย!`);
-            document.getElementById('jsonInput').value = '';
-            btn.classList.add('used');
+            navigator.clipboard.writeText(fullPayload).then(() => {
+              document.getElementById('jsonInput').value = '';
+              btn.classList.add('used');
+              alert(`คัดลอกชุดที่ ${item.id} พร้อม System Prompt เรียบร้อย!`);
+            });
           };
 
           grid.appendChild(btn);
@@ -579,23 +425,23 @@
       }
     }
 
-    async function pasteChunkJSON() {
-      try {
-        const text = await navigator.clipboard.readText();
-        document.getElementById('chunkJsonInput').value = text;
-      } catch (err) {
-        const fallbackText = prompt("วางรหัส JSON Chunk ที่นี่:");
-        if (fallbackText) document.getElementById('chunkJsonInput').value = fallbackText;
+    // HELPER TO EXTRACT JSON FROM CODE BLOCK
+    function extractJsonFromCodeBlock(text) {
+      if (!text) return '';
+      const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (codeBlockMatch && codeBlockMatch[1]) {
+        return codeBlockMatch[1].trim();
       }
+      return text.trim();
     }
 
     async function pasteJSON() {
       try {
         const text = await navigator.clipboard.readText();
-        document.getElementById('jsonInput').value = text;
+        document.getElementById('jsonInput').value = extractJsonFromCodeBlock(text);
       } catch (err) {
-        const fallbackText = prompt("วางรหัส JSON สื่อการสอนที่นี่:");
-        if (fallbackText) document.getElementById('jsonInput').value = fallbackText;
+        const fallbackText = prompt("กรุณาวางรหัส JSON ที่นี่:");
+        if (fallbackText) document.getElementById('jsonInput').value = extractJsonFromCodeBlock(fallbackText);
       }
     }
 
@@ -617,8 +463,28 @@
             "summary": "สรุปสไลด์ 1: ปริมาณการใช้น้ำมันในภาคขนส่ง",
             "metaphorStory": "🚕 รถเก๋งต่อคิวเติมน้ำมันถอนหายใจคิ้วขมวด 'รถแท็กซี่ต่อยาวขนาดนี้ ขนส่งกินน้ำมันเยอะจริงๆ!'",
             "entities": [
-              { "id": "car", "emojis": ["🚗", "😤"], "emojiLayout": "side-by-side", "hasBg": true, "label": "รถเก๋งบ่นคิ้วขมวด", "style": "warning", "x": 30, "y": 50, "scale": 1.0 },
-              { "id": "taxi", "emojis": ["🚕", "⛽"], "emojiLayout": "side-by-side", "hasBg": true, "label": "คิวแท็กซี่เติมน้ำมัน", "style": "highlight", "x": 70, "y": 50, "scale": 1.0 }
+              {
+                "id": "car",
+                "emojis": ["🚗", "😤"],
+                "emojiLayout": "side-by-side",
+                "hasBg": true,
+                "label": "รถเก๋งบ่นคิ้วขมวด",
+                "style": "warning",
+                "x": 30,
+                "y": 50,
+                "scale": 1.0
+              },
+              {
+                "id": "taxi",
+                "emojis": ["🚕", "⛽"],
+                "emojiLayout": "side-by-side",
+                "hasBg": true,
+                "label": "คิวแท็กซี่เติมน้ำมัน",
+                "style": "highlight",
+                "x": 70,
+                "y": 50,
+                "scale": 1.0
+              }
             ],
             "lines": [
               {"from": "car", "to": "taxi", "label": "ใช้น้ำมันมากที่สุด", "type": "arrow"}
@@ -627,33 +493,36 @@
           {
             "step": 2,
             "splitSentences": [
-              "รวมสื่อการสอนพลังงานขนส่งทั้งหมด: ภาคการขนส่งเป็นภาคส่วนที่ใช้น้ำมันเชื้อเพลิงมากที่สุดในประเทศ"
+              "การพัฒนาพลังงานทดแทน เช่น รถยนต์ไฟฟ้า (EV) ช่วยลดการพึ่งพาน้ำมันดิบ"
             ],
-            "summary": "สรุปแผ่นรวมสื่อการสอนทั้งหมด",
-            "metaphorStory": "🎭 มหานครแห่งการเดินทาง: รวมทุกโหนดยานพาหนะที่ใช้พลังงาน",
+            "summary": "สรุปสไลด์ 2: พลังงานทดแทนและยานยนต์ไฟฟ้า",
+            "metaphorStory": "⚡ รถไฟฟ้า EV ยิ้มแย้มเดินผ่านปั๊มน้ำมัน 'ไม่ต้องง้อน้ำมันดิบอีกต่อไป!'",
             "entities": [
-              { "id": "car", "emojis": ["🚗"], "hasBg": true, "label": "รถเก๋ง", "style": "warning", "x": 20, "y": 50, "scale": 0.9 },
-              { "id": "taxi", "emojis": ["🚕"], "hasBg": true, "label": "รถแท็กซี่", "style": "highlight", "x": 50, "y": 50, "scale": 0.9 },
-              { "id": "bus", "emojis": ["🚌"], "hasBg": true, "label": "รถประจำทาง", "style": "highlight", "x": 80, "y": 50, "scale": 0.9 }
+              {
+                "id": "ev",
+                "emojis": ["🏎️", "⚡"],
+                "emojiLayout": "side-by-side",
+                "hasBg": true,
+                "label": "รถยนต์ไฟฟ้า EV",
+                "style": "highlight",
+                "x": 30,
+                "y": 50,
+                "scale": 1.0
+              },
+              {
+                "id": "oil",
+                "emojis": ["🛢️", "❌"],
+                "emojiLayout": "side-by-side",
+                "hasBg": true,
+                "label": "ลดการใช้น้ำมันดิบ",
+                "style": "danger",
+                "x": 70,
+                "y": 50,
+                "scale": 1.0
+              }
             ],
             "lines": [
-              {"from": "car", "to": "taxi", "label": "ใช้น้ำมัน", "type": "arrow"},
-              {"from": "taxi", "to": "bus", "label": "ขนส่งมวลชน", "type": "arrow"}
-            ]
-          },
-          {
-            "step": 3,
-            "splitSentences": [
-              "ความรู้รอบตัวสุ่ม: พลังงานไฮโดรเจนสะอาดถูกนำมาใช้ทดแทนน้ำมันในรถยนต์ยุคใหม่"
-            ],
-            "summary": "ความรู้สุ่มรอบตัวประจำวัน",
-            "metaphorStory": "🌱 ไฮโดรเจนบริสุทธิ์ขับไล่ควันพิษออกจากเมืองใหญ่",
-            "entities": [
-              { "id": "h2", "emojis": ["💧", "⚡"], "hasBg": true, "label": "พลังงานไฮโดรเจน", "style": "highlight", "x": 35, "y": 50, "scale": 1.0 },
-              { "id": "eco", "emojis": ["🍃"], "hasBg": true, "label": "ไร้มลพิษ", "style": "warning", "x": 65, "y": 50, "scale": 1.0 }
-            ],
-            "lines": [
-              {"from": "h2", "to": "eco", "label": "ปล่อยเพียงไอน้ำ", "type": "arrow"}
+              {"from": "ev", "to": "oil", "label": "ทดแทนน้ำมัน", "type": "arrow"}
             ]
           }
         ]
@@ -664,14 +533,104 @@
 
     function renderLesson() {
       try {
-        let raw = document.getElementById('jsonInput').value;
-        raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
-        lessonData = JSON.parse(raw);
+        const rawInput = document.getElementById('jsonInput').value;
+        const cleanJson = extractJsonFromCodeBlock(rawInput);
+        lessonData = JSON.parse(cleanJson);
+        
+        // BUILD SYNTHESIZED INTEGRATED SUMMARY SLIDE AND RANDOM KNOWLEDGE SLIDE
+        buildExtraSlides();
+
         currentStepIndex = 0;
         showStep(currentStepIndex);
       } catch (e) {
         alert('รูปแบบ JSON ไม่ถูกต้อง กรุณาตรวจสอบรหัส JSON');
       }
+    }
+
+    // BUILD SLIDE N+1 (INTEGRATED SUMMARY) & SLIDE N+2 (RANDOM KNOWLEDGE MIND MAP)
+    function buildExtraSlides() {
+      if (!lessonData || !lessonData.steps) return;
+      
+      // REMOVE PREVIOUS EXTRA SLIDES IF RE-RENDERING
+      lessonData.steps = lessonData.steps.filter(s => !s.isExtraSlide);
+
+      // 1. INTEGRATED SUMMARY SLIDE
+      const allEntities = [];
+      const allLines = [];
+      const allSentences = [];
+
+      lessonData.steps.forEach((st, idx) => {
+        allSentences.push(`[สไลด์ ${idx + 1}]: ${st.splitSentences ? st.splitSentences.join(' ') : ''}`);
+        
+        if (st.entities) {
+          st.entities.forEach(ent => {
+            const newId = `sum_${st.step}_${ent.id}`;
+            allEntities.push({
+              ...ent,
+              id: newId,
+              originalStep: st.step,
+              originalLabel: ent.label,
+              label: `[สไลด์ ${st.step}] ${ent.label}`
+            });
+          });
+        }
+      });
+
+      // AUTO DISTRIBUTE ENTITIES ON INTEGRATED CANVAS GRID
+      const count = allEntities.length;
+      const cols = Math.ceil(Math.sqrt(count));
+      const rows = Math.ceil(count / cols);
+      
+      allEntities.forEach((ent, i) => {
+        const r = Math.floor(i / cols);
+        const c = i % cols;
+        ent.x = Math.round(15 + (c * (70 / Math.max(1, cols - 1))));
+        ent.y = Math.round(20 + (r * (60 / Math.max(1, rows - 1))));
+      });
+
+      // CONNECT SUMMARY ENTITIES CHRONOLOGICALLY
+      for (let i = 0; i < allEntities.length - 1; i++) {
+        allLines.push({
+          from: allEntities[i].id,
+          to: allEntities[i+1].id,
+          label: 'เชื่อมโยงภาพรวม',
+          type: 'animated-arrow'
+        });
+      }
+
+      const summarySlide = {
+        isExtraSlide: true,
+        isSummarySlide: true,
+        step: lessonData.steps.length + 1,
+        splitSentences: ["🌐 สไลด์สรุปภาพรวมเนื้อหาทั้งหมดของบทเรียน คลิกโหนดเพื่อดูรายละเอียดแต่ละสไลด์"],
+        summary: "รวมโหนดสื่อการสอนและองค์ความรู้ทั้งหมดในระบบ",
+        metaphorStory: "🎭 ฉากรวมมิตรตัวละครทุกตัวออกมาจับมือและเชื่อมโยงความรู้เข้าด้วยกันอย่างสมบูรณ์!",
+        entities: allEntities,
+        lines: allLines
+      };
+
+      // 2. RANDOM KNOWLEDGE MIND MAP SLIDE
+      const customInterest = document.getElementById('customInterestInput').value.trim() || 'เทคโนโลยีอัจฉริยะและการเรียนรู้แห่งอนาคต';
+      const randomKnowledgeSlide = {
+        isExtraSlide: true,
+        isRandomSlide: true,
+        step: lessonData.steps.length + 2,
+        splitSentences: [`📰 สรุปความรู้และข่าวสารสุ่มที่น่าสนใจประจำวัน (เน้นหัวข้อ: ${customInterest})`],
+        summary: `เกร็ดความรู้และอัปเดตเทรนด์น่ารู้เกี่ยวกับ ${customInterest}`,
+        metaphorStory: "🎭 ประตูกาลเวลาเปิดออก นำเสนอความรู้ใหม่จากโลกภายนอกที่สุ่มมาให้เรียนรู้เพิ่ม!",
+        entities: [
+          { id: "rk1", emojis: ["💡"], label: customInterest, style: "highlight", x: 50, y: 30, scale: 1.1 },
+          { id: "rk2", emojis: ["🚀", "⚡"], emojiLayout: "side-by-side", label: "นวัตกรรมก้าวกระโดด", style: "warning", x: 25, y: 65, scale: 1.0 },
+          { id: "rk3", emojis: ["🌐", "📚"], emojiLayout: "side-by-side", label: "การประยุกต์ใช้รอบตัว", style: "highlight", x: 75, y: 65, scale: 1.0 }
+        ],
+        lines: [
+          { from: "rk1", to: "rk2", label: "การพัฒนา", type: "animated-arrow" },
+          { from: "rk1", to: "rk3", label: "ส่งผลกระทบ", type: "arrow" }
+        ]
+      };
+
+      lessonData.steps.push(summarySlide);
+      lessonData.steps.push(randomKnowledgeSlide);
     }
 
     function showStep(index) {
@@ -688,7 +647,7 @@
       
       document.getElementById('activeStepText').innerHTML = sentenceHTML || 'ไม่มีเนื้อหาประโยค';
       document.getElementById('stepSummary').innerText = `📝 สรุปประจำสไลด์: ${step.summary || '-'}`;
-      document.getElementById('stepCounter').innerText = `สเต็ป: ${index + 1} /${lessonData.steps.length}`;
+      document.getElementById('stepCounter').innerText = `สเต็ป: ${index + 1} / ${lessonData.steps.length}`;
 
       const metaphorBox = document.getElementById('metaphorBox');
       if (step.metaphorStory) {
@@ -704,8 +663,11 @@
       const cHeight = stageCanvas.clientHeight || 500;
       const entityPositions = {};
 
-      // ปรับขนาด Auto เมื่อ entity มีจำนวนมาก
-      const autoScale = step.entities.length > 8 ? 0.8 : 1.0;
+      // AUTO-SCALING EMOJIS BASED ON ENTITY COUNT
+      const entityCount = step.entities ? step.entities.length : 0;
+      let autoScale = 1.0;
+      if (entityCount > 8) autoScale = 0.75;
+      else if (entityCount > 5) autoScale = 0.85;
 
       step.entities.forEach(ent => {
         const xPos = (ent.x / 100) * cWidth;
@@ -729,27 +691,31 @@
           const bgClass = ent.hasBg ? ' has-bg' : '';
 
           if (ent.emojiLayout === 'overlay' && emojiList.length > 1) {
-            visualHTML = `<div class="emoji-wrapper${bgClass}"><span class="emoji-main">${emojiList[0]}</span><span class="emoji-overlay">${emojiList[1]}</span></div>`;
+            visualHTML = `
+              <div class="emoji-wrapper${bgClass}">
+                <span class="emoji-main">${emojiList[0]}</span>
+                <span class="emoji-overlay">${emojiList[1]}</span>
+              </div>
+            `;
           } else if (ent.emojiLayout === 'side-by-side' && emojiList.length > 1) {
-            visualHTML = `<div class="emoji-wrapper${bgClass}"><span class="emoji-main">${emojiList[0]}</span><span class="emoji-sub">${emojiList[1]}</span></div>`;
+            visualHTML = `
+              <div class="emoji-wrapper${bgClass}">
+                <span class="emoji-main">${emojiList[0]}</span>
+                <span class="emoji-sub">${emojiList[1]}</span>
+              </div>
+            `;
           } else {
-            visualHTML = `<div class="emoji-wrapper${bgClass}">${emojiList.map(e => `<span class="emoji-main">${e}</span>`).join('')}</div>`;
+            visualHTML = `
+              <div class="emoji-wrapper${bgClass}">
+                ${emojiList.map(e => `<span class="emoji-main">${e}</span>`).join('')}
+              </div>
+            `;
           }
         }
 
-        div.innerHTML = `${visualHTML}<span class="label" onclick="toggleExpandLabel(this)">${ent.label}</span>`;
+        // TEXT LABEL WITH CLICK-TO-EXPAND & CLICK SUMMARY DETAILS
+        div.innerHTML = `${visualHTML}<span class="label" onclick="handleEntityClick(this, '${ent.originalStep || ''}')">${ent.label}</span>`;
         
-        // ปุ่มแสดงเนื้อหาย่อยข้างอีโมจิ
-        const btnSubText = document.createElement('button');
-        btnSubText.innerText = '📖';
-        btnSubText.title = 'ดูเนื้อหาย่อย';
-        btnSubText.style.cssText = 'position:absolute; top:-8px; right:-12px; padding:2px 4px; font-size:10px; border-radius:50%; background:var(--purple); color:white; border:none; cursor:pointer;';
-        btnSubText.onclick = (e) => {
-          e.stopPropagation();
-          alert(`เนื้อหาย่อย [${ent.label}]:\n${sentences.join('\n')}`);
-        };
-        div.appendChild(btnSubText);
-
         makeEntityDraggable(div, stageCanvas, ent.id, entityPositions, step.lines);
         entityLayer.appendChild(div);
       });
@@ -757,10 +723,17 @@
       renderLines(step.lines, entityPositions);
     }
 
-    function toggleExpandLabel(element) {
-      element.classList.toggle('expanded');
+    function handleEntityClick(elm, originalStep) {
+      elm.classList.toggle('expanded');
+      if (originalStep) {
+        const targetStep = lessonData.steps.find(s => s.step == originalStep);
+        if (targetStep) {
+          alert(`📌 [เนื้อหาย่อยสไลด์ที่ ${originalStep}]:\n${targetStep.splitSentences.join('\n')}`);
+        }
+      }
     }
 
+    // RENDER SVG CONNECTING LINES (TAPERED LINE + EXACT 11px TEXT + NON-OVERLAPPING ARROW HEAD)
     function renderLines(lines, entityPositions) {
       const svg = document.getElementById('svgLayer');
       const defs = svg.querySelector('defs');
@@ -774,33 +747,57 @@
         const end = entityPositions[line.to];
 
         if (start && end) {
-          const svgLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-          
-          svgLine.setAttribute('x1', start.x);
-          svgLine.setAttribute('y1', start.y);
-          svgLine.setAttribute('x2', end.x);
-          svgLine.setAttribute('y2', end.y);
-          
-          if (line.type === 'animated-arrow' || line.type === 'flow') {
-            svgLine.setAttribute('stroke', '#2563eb');
-            svgLine.setAttribute('stroke-width', '2.5');
-            svgLine.setAttribute('class', 'animated-line');
-            svgLine.setAttribute('marker-end', 'url(#arrow-animated)');
-          } else if (line.type === 'dashed') {
-            svgLine.setAttribute('stroke', '#94a3b8');
-            svgLine.setAttribute('stroke-width', '2');
-            svgLine.setAttribute('stroke-dasharray', '5,5');
-          } else {
-            svgLine.setAttribute('stroke', '#2563eb');
-            svgLine.setAttribute('stroke-width', '2.5');
-            svgLine.setAttribute('marker-end', 'url(#arrow)');
-          }
-          
-          svg.appendChild(svgLine);
+          // CALCULATE ANGLE AND OFFSET TO PREVENT ARROW OVERLAPPING ENTITY EMOJI
+          const dx = end.x - start.x;
+          const dy = end.y - start.y;
+          const angle = Math.atan2(dy, dx);
+          const offsetRadius = 24; // Stop 24px short of target center
 
+          const adjEndX = end.x - offsetRadius * Math.cos(angle);
+          const adjEndY = end.y - offsetRadius * Math.sin(angle);
+
+          // DRAW POLYGON / PATH FOR TAPERED LINE (WIDE AT START, POINTY AT END)
+          const strokeWidthStart = 4.5;
+          const strokeWidthEnd = 1.0;
+          
+          const perpAngle = angle + Math.PI / 2;
+          const p1x = start.x + (strokeWidthStart / 2) * Math.cos(perpAngle);
+          const p1y = start.y + (strokeWidthStart / 2) * Math.sin(perpAngle);
+          const p2x = start.x - (strokeWidthStart / 2) * Math.cos(perpAngle);
+          const p2y = start.y - (strokeWidthStart / 2) * Math.sin(perpAngle);
+
+          const p3x = adjEndX - (strokeWidthEnd / 2) * Math.cos(perpAngle);
+          const p3y = adjEndY - (strokeWidthEnd / 2) * Math.sin(perpAngle);
+          const p4x = adjEndX + (strokeWidthEnd / 2) * Math.cos(perpAngle);
+          const p4y = adjEndY + (strokeWidthEnd / 2) * Math.sin(perpAngle);
+
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          const dStr = `M ${p1x} ${p1y} L ${p4x} ${p4y} L ${p3x} ${p3y} L ${p2x} ${p2y} Z`;
+          
+          path.setAttribute('d', dStr);
+          path.setAttribute('fill', '#2563eb');
+          path.setAttribute('opacity', '0.85');
+
+          if (line.type === 'animated-arrow' || line.type === 'flow') {
+            path.setAttribute('class', 'animated-line');
+          }
+
+          svg.appendChild(path);
+
+          // ADD ARROW HEAD MARKER AT ADJ END
+          const markerLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          markerLine.setAttribute('x1', start.x);
+          markerLine.setAttribute('y1', start.y);
+          markerLine.setAttribute('x2', adjEndX);
+          markerLine.setAttribute('y2', adjEndY);
+          markerLine.setAttribute('stroke', 'transparent');
+          markerLine.setAttribute('marker-end', line.type === 'animated-arrow' ? 'url(#arrow-animated)' : 'url(#arrow)');
+          svg.appendChild(markerLine);
+
+          // LINE TEXT WITH EXACT 11px WHITE BACKGROUND BOX
           if (line.label) {
-            const midX = (start.x + end.x) / 2;
-            const midY = (start.y + end.y) / 2;
+            const midX = (start.x + adjEndX) / 2;
+            const midY = (start.y + adjEndY) / 2;
 
             const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             group.setAttribute('class', 'line-text-group');
@@ -837,7 +834,7 @@
       elmnt.ontouchstart = dragTouchStart;
 
       function dragMouseDown(e) {
-        if (e.target.tagName.toLowerCase() === 'span' || e.target.tagName.toLowerCase() === 'button') return;
+        if (e.target.tagName.toLowerCase() === 'span') return;
         e.preventDefault();
         pos3 = e.clientX;
         pos4 = e.clientY;
@@ -896,27 +893,26 @@
       }
     }
 
-    // POPUP MODAL FUNCTIONS
+    // POP-UP MODAL CONTROLS FOR VIEWING ALL CONTENT
     function openAllContentModal() {
-      if (!lessonData) {
-        alert('กรุณสร้างและเล่นสื่อการสอนก่อน');
+      if (!lessonData || !lessonData.steps) {
+        alert('กรุณาโหลดสื่อการสอนก่อน');
         return;
       }
-      const modalBody = document.getElementById('modalContentBody');
-      modalBody.innerHTML = '';
+      const body = document.getElementById('modalBodyContent');
+      body.innerHTML = '';
 
-      lessonData.steps.forEach((st, idx) => {
-        const isCurrent = idx === currentStepIndex;
+      const baseSteps = lessonData.steps.filter(s => !s.isExtraSlide);
+
+      baseSteps.forEach((st, idx) => {
+        const colorClass = `chunk-color-${idx % 5}`;
         const div = document.createElement('div');
-        div.className = 'highlight-chunk';
-        div.style.background = isCurrent ? '#eff6ff' : '#f8fafc';
-        div.style.borderColor = isCurrent ? 'var(--primary)' : 'var(--border)';
-        
+        div.className = `chunk-highlight-box ${colorClass}`;
         div.innerHTML = `
-          <div style="font-weight:bold; color:var(--primary); margin-bottom:4px;">สไลด์ที่ ${idx + 1}: ${st.summary \vert{}\vert{} ''}${isCurrent ? '👈 (กำลังแสดง)' : ''}</div>
-          <div>${(st.splitSentences || []).join('<br>')}</div>
+          <strong>📌 ชุดเนื้อหาย่อยที่ ${idx + 1} (${st.summary || 'สไลด์ ' + (idx + 1)})</strong>
+          <div style="margin-top:6px;">${st.splitSentences ? st.splitSentences.join('<br>') : ''}</div>
         `;
-        modalBody.appendChild(div);
+        body.appendChild(div);
       });
 
       document.getElementById('contentModal').style.display = 'flex';
@@ -926,59 +922,63 @@
       document.getElementById('contentModal').style.display = 'none';
     }
 
-    // GENERATE QUIZ PROMPTS (SUB / ALL)
-    function generateQuizPrompt(type) {
-      if (!lessonData) {
+    // COPY QUIZ GENERATOR PROMPT (CHINESE VERTICAL DRAMA TUTOR THEME)
+    function copyQuizPrompt(mode) {
+      if (!lessonData || !lessonData.steps) {
         alert('กรุณาโหลดสื่อการสอนก่อน');
         return;
       }
 
-      let contentText = '';
-      let numQuestions = 5;
+      let targetContent = "";
+      let countText = "5 ข้อ";
+      let modeTitle = "เนื้อหาย่อยเฉพาะสไลด์ปัจจุบัน";
 
-      if (type === 'sub') {
-        const st = lessonData.steps[currentStepIndex];
-        contentText = (st.splitSentences || []).join('\n');
-        numQuestions = 5;
+      if (mode === 'full') {
+        const baseSteps = lessonData.steps.filter(s => !s.isExtraSlide);
+        targetContent = baseSteps.map((s, i) => `[ชุดที่ ${i+1}]: ${s.splitSentences.join(' ')}`).join('\n');
+        countText = "10 ข้อ";
+        modeTitle = "เนื้อหาครอบคลุมบทเรียนทั้งหมด";
       } else {
-        contentText = lessonData.steps.map(s => (s.splitSentences || []).join('\n')).join('\n\n');
-        numQuestions = 10;
+        const curStep = lessonData.steps[currentStepIndex];
+        targetContent = curStep.splitSentences ? curStep.splitSentences.join(' ') : 'ไม่มีเนื้อหา';
+        modeTitle = `เนื้อหาย่อยสไลด์ที่ ${currentStepIndex + 1}`;
       }
 
-      const promptStr = `จงสวมบทบาทเป็น "สุดยอดติวเตอร์และนักเขียนบทซีรีส์ละครจีนแนวตั้ง" 
-ทำหน้าที่นำเนื้อหาด้านล่างนี้ มาสร้างเป็นแบบทดสอบจำนวน ${numQuestions} ข้อ
+      const quizPrompt = `คุณคือ "สุดยอดติวเตอร์อันดับ 1" และ "นักเขียนบทซีรีส์ละครจีนแนวตั้ง (Short Drama)" ที่เชี่ยวชาญการดึงอารมณ์และสร้างความตื่นเต้น
 
-[ข้อกำหนดสำคัญ STRICT RULES]
-1. สร้างโจทย์ทั้งหมด ${numQuestions} ข้อ โดยผูกเป็น "เนื้อเรื่องซีรีส์ละครจีนแนวตั้งแนวเน้นอารมณ์ดราม่า" เรื่องเดียวกันตั้งแต่ข้อ 1 ถึงข้อสุดท้าย
-2. ข้อสุดท้าย (${numQuestions}) ต้องเป็นตอนจบของเรื่องราวที่เข้มข้นสะศมและประทับใจ
-3. ทุกข้อต้องร้อยเรียงเนื้อหาบทเรียนเข้ากับปมละครอย่างแนบเนียน
-4. เฉลยเฉลยถูกต้องให้อยู่ใต้ตัวเลือกแต่ละข้อ โดยอธิบายคำตอบเป็นการปูเรื่องเชื่อมโยงสู่เนื้อเรื่องข้อถัดไป
-5. กระจายคำตอบที่ถูกต้องให้หลากหลาย ห้ามกระจุกตัวอยู่ที่ตัวเลือกเดียว
-6. ไม่ต้องใส่ Code Block สีดำครอบผลลัพธ์ (ไม่ต้องใช้ \`\`\`) ให้แสดงเป็นข้อความธรรมดา เพื่อป้องกันเนื้อหาหลุดขอบขวา
-7. คำแนะนำเพิ่มเติม: คุณสามารถปรับเปลี่ยนจำนวนข้อและธีมเรื่องราวได้ตามต้องการในการเจนครั้งถัดไป
+[ภารกิจ]
+จงนำ [เนื้อหาการเรียนรู้] ด้านล่างนี้ ไปสร้างเป็นแบบทดสอบติวเตอร์เชิงละครจีนแนวตั้ง จำนวนอย่างน้อย ${countText} โดยโจทย์ทุกข้อต้องร้อยเรียงเป็น "เนื้อเรื่องละครต่อเนื่องเรื่องเดียวกัน" ตั้งแต่ข้อแรกจนถึงข้อสุดท้าย (ข้อสุดท้ายคือบทสรุปตอนจบ)
 
-[เนื้อหาบทเรียนสำหรับสร้างโจทย์]:
-${contentText}`;
+[กฎเหล็กการสร้างโจทย์ STRICT RULES]
+1. สมมติตัวเองเป็น ติวเตอร์ + คนเขียนบทละครจีนแนวตั้ง ผูกเรื่องราวขับเคี่ยว แก้แค้น หรือแข่งขันทางธุรกิจ/การเรียน
+2. สอดแทรกคำถามวัดความรู้จากเนื้อหาการเรียนรู้ เข้าไปในสถานการณ์ของตัวละครอย่างแนบเนียน
+3. [ตำแหน่งเฉลย]: ให้วางเฉลยและคำอธิบายไว้ "ใต้โจทย์แต่ละข้อทันที" (ห้ามไปกองรวมท้ายสุด)
+4. [การเฉลยแบบปูเรื่อง]: คำอธิบายเฉลยต้องทำหน้าที่ปูเนื้อเรื่องดราม่าส่งต่อไปยังโจทย์ข้อถัดไป
+5. [การกระจายตัวเลือก]: ห้ามให้คำตอบถูกต้องแช่อยู่ที่ตัวเลือกเดียว (ต้องกระจาย ก, ข, ค, ง ให้เฉลี่ยเท่าๆ กัน)
+6. [ข้อบังคับรูปแบบการส่งกลับ]: ส่งกลับใน Markdown Code Block (\`\`\`markdown ... \`\`\`) เพื่อให้กด Copy ได้ง่าย ไม่หลุดขอบขวา
+7. [คำแนะนำผู้ใช้]: สรุปหมายเหตุท้ายสุดว่า "💡 ผู้ใช้งานสามารถปรับเปลี่ยนจำนวนข้อ หรือเปลี่ยนธีมละคร (เช่น แฟนตาซี, สืบสวน) ได้ตามต้องการ"
 
-      copyToClipboard(promptStr, `คัดลอก พรอมต์สร้างโจทย์ละครจีน (${type === 'sub' ? 'ย่อย 5 ข้อ' : 'รวม 10 ข้อ'}) เรียบร้อย!`);
+[เนื้อหาการเรียนรู้สำหรับสร้างโจทย์ (${modeTitle})]:
+${targetContent}`;
+
+      navigator.clipboard.writeText(quizPrompt).then(() => {
+        alert(`คัดลอก พรอมต์สร้างโจทย์ติวเตอร์ละครจีน (${countText}) เรียบร้อย!`);
+      });
     }
 
-    // COPY TEXT (SUB / ALL)
-    function copyText(type) {
-      if (!lessonData) {
-        alert('กรุณาโหลดสื่อการสอนก่อน');
-        return;
-      }
-
-      let contentText = '';
-      if (type === 'sub') {
-        const st = lessonData.steps[currentStepIndex];
-        contentText = (st.splitSentences || []).join('\n');
+    function copyContentText(mode) {
+      if (!lessonData || !lessonData.steps) return;
+      let text = "";
+      if (mode === 'full') {
+        const baseSteps = lessonData.steps.filter(s => !s.isExtraSlide);
+        text = baseSteps.map((s, i) => `[ชุดที่ ${i+1}]: ${s.splitSentences.join(' ')}`).join('\n');
       } else {
-        contentText = lessonData.steps.map((s, i) => `[แผ่นที่ ${i+1}]\n` + (s.splitSentences || []).join('\n')).join('\n\n');
+        const curStep = lessonData.steps[currentStepIndex];
+        text = curStep.splitSentences ? curStep.splitSentences.join('\n') : '';
       }
-
-      copyToClipboard(contentText, `คัดลอกเนื้อหา (${type === 'sub' ? 'ย่อย' : 'รวมทั้งหมด'}) เรียบร้อย!`);
+      navigator.clipboard.writeText(text).then(() => {
+        alert('คัดลอกข้อความเนื้อหาเรียบร้อย!');
+      });
     }
 
     function saveSingleSlideImage() {
@@ -997,7 +997,9 @@ ${contentText}`;
 
       const step = lessonData.steps[currentStepIndex];
       const sentences = step.splitSentences || [];
-      executeSpeech(`${sentences.join(' ')}`);
+      const textToSpeak = `${sentences.join(' ')}`;
+      
+      executeSpeech(textToSpeak);
     }
 
     function speakSummaryOnly() {
@@ -1005,7 +1007,8 @@ ${contentText}`;
       if (!lessonData || !lessonData.steps[currentStepIndex]) return;
 
       const step = lessonData.steps[currentStepIndex];
-      executeSpeech(step.summary || 'ไม่มีข้อความสรุป');
+      const textToSpeak = step.summary || 'ไม่มีข้อความสรุป';
+      executeSpeech(textToSpeak);
     }
 
     function executeSpeech(text) {
